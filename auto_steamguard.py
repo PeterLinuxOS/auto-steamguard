@@ -95,7 +95,7 @@ def main_menu() :
             
         elif choice == "4":
             cprint("Auto-SteamGuard for vertigoboost panel was created by:\n", "cyan")
-            cprint("[STT_Esports] PeterLinuxOS#1111", "blue")
+            cprint("PeterLinuxOS#1111", "blue")
             cprint("https://gameboosting.top", "green")
             input(colored("\nPress Enter to continue...", "cyan"))
         elif choice == "5":
@@ -181,7 +181,7 @@ def main():
                     
                     best_match, score = process.extractOne(account_name, accounts.keys())
                     
-                    if score > 80:
+                    if score > 25:
                         cprint(f"Recognized: {account_name} but it is not in the list. Did you mean {best_match}?", "yellow")
                         code = guard.generate_twofactor_code(b64decode(accounts[best_match]))
                         if code:
