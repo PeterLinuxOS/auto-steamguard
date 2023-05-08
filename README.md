@@ -6,7 +6,8 @@ Auto-SteamGuard Bot is a script that fills in Steam Guard codes for logged-in St
 3.Copy the downloaded .exe file and paste it into the same folder where the VertigoBoostPanel.exe file is located.  
 4.Create a new folder named maFiles in the same directory as the VertigoBoostPanel.exe file.  
 5.Move the required maFiles into this newly created maFiles folder.  
-6.Run the auto_steamguard.exe as administrator.  
+6.Run the auto_steamguard.exe as administrator.
+(To run *.py file you need to use python 3.9.13 and install all libraries)
 # ToDO
 > More effective recognition of letters and numbers.  
 > Connect recognition with AI  
