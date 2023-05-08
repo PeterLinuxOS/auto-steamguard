@@ -5,7 +5,7 @@ import pyautogui
 import time 
 from PIL import Image
 import win32gui
-import pytesseract
+import win32con
 from steam import guard
 from base64 import b64decode
 from termcolor import colored,cprint
@@ -13,6 +13,11 @@ from fuzzywuzzy import process
 from tabulate import tabulate
 import sys
 import ctypes
+
+import numpy as np
+
+import easyocr
+
 accounts = dict()
 if getattr(sys, 'frozen', False):
     script_dir = os.path.dirname(sys.executable)
@@ -20,9 +25,14 @@ else:
     script_dir = os.path.dirname(os.path.abspath(__file__))
 PATH = os.path.dirname(os.path.realpath(__file__))
 maFiles_dir = os.path.join(script_dir,"maFiles")
-pytesseract.pytesseract.tesseract_cmd =  os.path.join(PATH,"Tesseract-OCR","tesseract.exe")
-ignore_list = list()
+
+ignore_list = dict()
 login_place = Image.open(PATH + "/signin_button.png")
+
+
+reader = easyocr.Reader(['en'], )
+# Set up the client
+
 
 
 def is_admin():
@@ -57,6 +67,7 @@ def load_accounts():
     cprint(f"Loaded {len(accounts)} accounts","green")
              
 def main_menu() :
+    
     while True:
         cprint("============================================", "green")
         cprint("       Welcome to Auto-SteamGuard Bot       ", "green")
@@ -94,14 +105,15 @@ def main_menu() :
             cprint("Invalid choice. ","magenta")
             input(colored("Press Enter to continue...", "cyan"))
 def main():
+    
     if not is_admin():
         cprint("Please run the file as an administrator.","red")
         input()
         return
-    if not os.path.isfile(os.path.join(script_dir,"VertigoBoostPanel.exe")):
+    """if not os.path.isfile(os.path.join(script_dir,"VertigoBoostPanel.exe")) or not os.path.isfile(os.path.join(os.path.abspath(os.path.join(script_dir, os.pardir)),"VertigoBoostPanel.exe")):
         cprint("Please place file in to VertigoBoostPanel path","red")
         input()
-        return
+        return"""
     if not os.path.isdir(maFiles_dir):
         cprint("Please create Mafiles folder and place in to your .maFile/s ","red")
         input()
@@ -117,27 +129,38 @@ def main():
         for window in windows:
             
             hwnd = window._hWnd
-            if hwnd in ignore_list:
+            
+            try:    
+                win32gui.SetForegroundWindow(hwnd)
+            except:
                 continue
             
-            try:
-                window.activate()
-            except :
-                try:
-                    win32gui.SetForegroundWindow(hwnd)
-                except:
-                    continue
+            if hwnd in ignore_list and ignore_list[hwnd] >= 3:
+                continue
+            
+            
            
             left, top, right, bottom = win32gui.GetWindowRect(hwnd)
             region=(left, top, right-left, bottom-top)
             button_location = pyautogui.locateOnScreen(login_place, region=region, confidence=0.8,)
             if button_location:
                 
-                screenshot = pyautogui.screenshot(region=region)
-                
-                text:str = pytesseract.image_to_string(screenshot, lang='eng')
-                
-                account_name = text.split("\n")[2].split(" ")[1].strip()
+                screenshot = np.array(pyautogui.screenshot(region=region))
+                results = reader.readtext(screenshot)
+                string_list = [elem[1] for elem in results if type(elem[1]) == str]
+                print(string_list)
+                account_name = (string_list[2] if not "Enter the" in string_list[2] else str(string_list[1]).split(" ")[1])
+                print(account_name)
+                if not account_name in accounts:
+                    string_list.remove("Use backup code")
+                    string_list.remove("Hel_Lno londer have access to mV Steam Mobile_An_")
+                    string_list.remove("STEAM GUARD")
+                    string_list.remove("Enter the code from your Steam Mobile App")
+                    split_accounts = [word for string in string_list for word in string.split()]
+                    for s in split_accounts:
+                        if s in accounts:
+                            account_name = s
+                            break
                 
                 if account_name in accounts:
                     code = guard.generate_twofactor_code(b64decode(accounts[account_name]))
@@ -151,7 +174,7 @@ def main():
                         time.sleep(2)
                     else:
                         cprint(f"shared_secret is incorrect for {account_name}","red")
-                        ignore_list.append(hwnd)    
+                        ignore_list[hwnd] +=1 
                         time.sleep(0.5)  
                         continue
                 else:
@@ -166,26 +189,25 @@ def main():
                             pyautogui.click(x, y)
                             time.sleep(0.5)
                             pyautogui.write(code)
+                            time.sleep(3)
                         else:
                             cprint(f"shared_secret is incorrect for {account_name}","red")
-                            ignore_list.append(hwnd)    
+                            ignore_list[hwnd] +=1  
                             time.sleep(0.5)  
                             continue
                         
                     else:
                     
                         cprint(f"I cant find account: {account_name} in maFiles.","red")
-                        ignore_list.append(hwnd)    
+                        ignore_list[hwnd] +=1  
                         time.sleep(0.5)  
                         continue
                         
           
-        time.sleep(2)
+        
     
     
 if "__main__" == __name__:
-    try:
         main()
-    except Exception as E:
-        print(E) 
-        input()
+    
+        
